@@ -1,0 +1,17 @@
+name: update calendar
+on:
+  schedule: [{ cron: "0 4 * * *" }]  # daily, 05/06 Rome
+  workflow_dispatch:
+permissions: { contents: write }
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 unisr_ics.py unisr.ics 1-20
+      - run: |
+          git config user.name bot && git config user.email bot@users.noreply.github.com
+          git add unisr.ics
+          # DTSTAMP changes every run; only commit when an actual lesson line changed
+          git diff --cached -U0 | grep -E '^[+-](DTSTART|DTEND|SUMMARY|LOCATION|DESCRIPTION|UID)' && git commit -m "update calendar" && git push || echo "no changes"
